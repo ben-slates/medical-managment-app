@@ -1,0 +1,47 @@
+# Build artifacts
+build/
+.gradle/
+*.apk
+*.aar
+*.zip
+*.jar
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+*.jks
+*.keystore
+local.properties
+
+# Gradle
+.gradle
+gradlew.bat
+
+# Kotlin
+.kotlin/
+
+# Generated files
+bin/
+gen/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+*~
+.vscode/
+
+# Environment
+.env
+.env.local

@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.MedicalManagement" parent="android:style/Theme.Material.Light.NoActionBar" />
+</resources>

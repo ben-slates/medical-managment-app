@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function isDoctor() { return signedIn() && me().data.role == "DOCTOR"; }
+    function isPatient() { return signedIn() && me().data.role == "PATIENT"; }
+    function ownsUser(uid) { return signedIn() && request.auth.uid == uid; }
+    function related(patientId, doctorId) {
+      return signedIn() && (request.auth.uid == patientId || request.auth.uid == doctorId);
+    }
+
+    match /users/{uid} {
+      allow create: if ownsUser(uid);
+      allow read, update: if ownsUser(uid) || isDoctor();
+      allow delete: if false;
+    }
+
+    match /appointments/{id} {
+      allow create: if signedIn() && request.resource.data.patientId == request.auth.uid;
+      allow read, update: if related(resource.data.patientId, resource.data.doctorId);
+      allow delete: if false;
+    }
+
+    match /treatments/{id} {
+      allow create, update: if isDoctor() && request.resource.data.doctorId == request.auth.uid;
+      allow read: if related(resource.data.patientId, resource.data.doctorId);
+      allow delete: if false;
+    }
+
+    match /bills/{id} {
+      allow create, update: if isDoctor() && request.resource.data.doctorId == request.auth.uid;
+      allow read: if related(resource.data.patientId, resource.data.doctorId);
+      allow delete: if false;
+    }
+
+    match /prescriptions/{id} {
+      allow create, update: if isDoctor() && request.resource.data.doctorId == request.auth.uid;
+      allow read: if related(resource.data.patientId, resource.data.doctorId);
+      allow delete: if false;
+    }
+
+    match /notifications/{id} {
+      allow create: if signedIn();
+      allow read, update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+  }
+}

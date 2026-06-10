@@ -1,0 +1,2 @@
+-keep class com.medical.management.data.model.** { *; }
+-keep class dagger.hilt.** { *; }
