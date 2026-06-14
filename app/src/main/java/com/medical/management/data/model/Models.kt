@@ -116,3 +116,10 @@ data class UiState<T>(
     val data: T? = null,
     val message: String = ""
 )
+
+data class AuthSession(
+    val loading: Boolean = true,
+    val authenticated: Boolean = false,
+    val user: MedicalUser? = null,
+    val message: String = ""
+)

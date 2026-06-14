@@ -1,31 +1,50 @@
-# Build artifacts
-build/
+# Gradle and Android build output
 .gradle/
-*.apk
-*.aar
-*.zip
-*.jar
+.kotlin/
+build/
+**/build/
+captures/
+outputs/
 
-# Android Studio
+# APKs and packaged artifacts
+*.apk
+*.ap_
+*.aab
+*.aar
+
+# Keep the Gradle wrapper checked in
+!gradle/wrapper/gradle-wrapper.jar
+!gradlew
+!gradlew.bat
+
+# Local Android and IDE files
+local.properties
 .idea/
 *.iml
 *.iws
 *.ipr
-.DS_Store
+.vscode/
+
+# Signing keys and credentials
 *.jks
 *.keystore
-local.properties
+*.p12
+*.pem
+keystore.properties
+signing.properties
 
-# Gradle
-.gradle
-gradlew.bat
+# Environment and machine-local config
+.env
+.env.*
+!.env.example
 
-# Kotlin
-.kotlin/
-
-# Generated files
-bin/
-gen/
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
 
 # OS files
 .DS_Store
@@ -36,12 +55,6 @@ gen/
 ehthumbs.db
 Thumbs.db
 
-# IDE
-*.swp
-*.swo
-*~
-.vscode/
-
-# Environment
-.env
-.env.local
+# Firebase Android config is intentionally tracked for this app.
+# Replace app/google-services.json with your own project file if you fork it.
+!app/google-services.json

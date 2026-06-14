@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.medical.management.data.model.Appointment
 import com.medical.management.data.model.AppointmentStatus
 import com.medical.management.data.model.MedicalUser
+import com.medical.management.presentation.shared.EmptyState
 import com.medical.management.presentation.shared.InfoCard
 import com.medical.management.presentation.shared.MedicalScaffold
 import com.medical.management.presentation.shared.MetricCard
@@ -47,11 +49,11 @@ fun DoctorHome(user: MedicalUser, onLogout: () -> Unit, vm: DoctorViewModel = hi
     var tab by remember { mutableIntStateOf(0) }
     val items = listOf(
         NavItem("Home", Icons.Default.Dashboard),
-        NavItem("Pending", Icons.Default.PendingActions),
+        NavItem("Requests", Icons.Default.PendingActions),
         NavItem("Today", Icons.Default.CalendarToday),
         NavItem("Patients", Icons.Default.Groups),
         NavItem("Care", Icons.Default.MedicalServices),
-        NavItem("Bill", Icons.Default.AccountBalanceWallet),
+        NavItem("Billing", Icons.Default.AccountBalanceWallet),
         NavItem("Profile", Icons.Default.Person)
     )
     MedicalScaffold("Doctor Portal", onLogout, items, tab, { tab = it }) { modifier ->
@@ -98,6 +100,15 @@ private fun AppointmentList(vm: DoctorViewModel, pending: Boolean) {
     val todaysAppointments by vm.today.collectAsState()
     val appointments = if (pending) pendingAppointments else todaysAppointments
     LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (appointments.isEmpty()) {
+            item {
+                EmptyState(
+                    if (pending) "No pending requests" else "No appointments today",
+                    if (pending) "New patient appointment requests will appear here." else "Approved appointments for today will appear here.",
+                    if (pending) Icons.Default.PendingActions else Icons.Default.CalendarToday
+                )
+            }
+        }
         items(appointments) { AppointmentCard(it, vm) }
     }
 }
@@ -106,9 +117,15 @@ private fun AppointmentList(vm: DoctorViewModel, pending: Boolean) {
 private fun AppointmentCard(appointment: Appointment, vm: DoctorViewModel) {
     InfoCard(appointment.patientName, "${appointment.appointmentDate} ${appointment.appointmentTime} | ${appointment.reason}", appointment.status) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { vm.status(appointment, AppointmentStatus.APPROVED) }) { Text("Approve") }
-            Button(onClick = { vm.status(appointment, AppointmentStatus.REJECTED) }) { Text("Reject") }
-            Button(onClick = { vm.status(appointment, AppointmentStatus.COMPLETED) }) { Text("Complete") }
+            when (appointment.status) {
+                AppointmentStatus.PENDING.name -> {
+                    Button(onClick = { vm.status(appointment, AppointmentStatus.APPROVED) }) { Text("Approve") }
+                    OutlinedButton(onClick = { vm.status(appointment, AppointmentStatus.REJECTED) }) { Text("Reject") }
+                }
+                AppointmentStatus.APPROVED.name -> {
+                    Button(onClick = { vm.status(appointment, AppointmentStatus.COMPLETED) }) { Text("Complete") }
+                }
+            }
         }
     }
 }

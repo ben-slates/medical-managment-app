@@ -60,6 +60,11 @@ object Validators {
         return ""
     }
 
+    fun email(email: String): String {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) return "Enter a valid email address"
+        return ""
+    }
+
     fun registration(form: AuthForm): String {
         return registrationErrors(form).firstMessage()
     }
@@ -67,13 +72,13 @@ object Validators {
     fun registrationErrors(form: AuthForm): RegistrationErrors {
         val phoneDigits = form.phone.filter(Char::isDigit)
         return RegistrationErrors(
-            fullName = if (form.fullName.trim().length < 2) "Enter the patient's full name" else "",
+            fullName = if (form.fullName.trim().length < 2) "Enter the full name" else "",
             email = if (!Patterns.EMAIL_ADDRESS.matcher(form.email.trim()).matches()) "Enter a valid email address" else "",
             phone = if (phoneDigits.length !in 10..15) "Enter a 10 to 15 digit phone number" else "",
             gender = if (form.role == UserRole.PATIENT && form.gender.isBlank()) "Select gender" else "",
             dateOfBirth = if (form.role == UserRole.PATIENT && form.dateOfBirth.isBlank()) "Select date of birth" else "",
             bloodGroup = if (form.role == UserRole.PATIENT && form.bloodGroup.isBlank()) "Select blood group" else "",
-            department = if (form.role == UserRole.PATIENT && form.department.isBlank()) "Select department" else "",
+            department = if (form.department.isBlank()) "Select department" else "",
             address = if (form.role == UserRole.PATIENT && form.address.isBlank()) "Address is required" else "",
             specialization = if (form.role == UserRole.DOCTOR && form.specialization.isBlank()) "Specialization is required" else "",
             qualification = if (form.role == UserRole.DOCTOR && form.qualification.isBlank()) "Qualification is required" else "",

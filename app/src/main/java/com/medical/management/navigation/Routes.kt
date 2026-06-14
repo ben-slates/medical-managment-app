@@ -5,6 +5,7 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val FORGOT = "forgot"
+    const val SESSION_ISSUE = "session_issue"
     const val PATIENT = "patient"
     const val DOCTOR = "doctor"
 }

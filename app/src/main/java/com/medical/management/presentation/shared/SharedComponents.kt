@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.time.Instant
@@ -152,9 +153,15 @@ fun MetricCard(label: String, value: String) {
 @Composable
 fun DetailLine(label: String, value: String) {
     if (value.isBlank()) return
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(
+            value,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.End
+        )
     }
 }
 
@@ -281,7 +288,11 @@ fun AppDatePickerField(
 fun LoadingButton(text: String, loading: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(onClick = onClick, modifier = modifier.fillMaxWidth(), enabled = !loading, contentPadding = PaddingValues(14.dp)) {
         if (loading) {
-            CircularProgressIndicator(modifier = Modifier.padding(end = 10.dp), strokeWidth = 2.dp)
+            CircularProgressIndicator(
+                modifier = Modifier.padding(end = 10.dp).size(18.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
         }
         Text(text)
     }

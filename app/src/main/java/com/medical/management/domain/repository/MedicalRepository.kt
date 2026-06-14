@@ -2,6 +2,7 @@ package com.medical.management.domain.repository
 
 import android.net.Uri
 import com.medical.management.data.model.Appointment
+import com.medical.management.data.model.AuthSession
 import com.medical.management.data.model.AuthForm
 import com.medical.management.data.model.Bill
 import com.medical.management.data.model.DashboardStats
@@ -10,6 +11,7 @@ import com.medical.management.data.model.Treatment
 import kotlinx.coroutines.flow.Flow
 
 interface MedicalRepository {
+    val authSession: Flow<AuthSession>
     val currentUser: Flow<MedicalUser?>
     suspend fun login(email: String, password: String): Result<MedicalUser>
     suspend fun register(form: AuthForm): Result<MedicalUser>

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -22,9 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +51,40 @@ import com.medical.management.utils.Validators
 private val genderOptions = listOf("Male", "Female", "Other")
 private val bloodGroupOptions = listOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")
 private val departmentOptions = listOf("General Medicine", "Cardiology", "Neurology", "Orthopedics", "Pediatrics", "Dermatology", "Emergency")
+private val specializationOptions = listOf(
+    "General Physician",
+    "Cardiologist",
+    "Neurologist",
+    "Orthopedic Surgeon",
+    "Pediatrician",
+    "Dermatologist",
+    "Emergency Medicine Specialist",
+    "Gynecologist",
+    "ENT Specialist",
+    "Psychiatrist",
+    "Radiologist",
+    "Dentist"
+)
+private val qualificationOptions = listOf(
+    "MBBS",
+    "BDS",
+    "MD",
+    "MS",
+    "FCPS",
+    "MRCP",
+    "FRCS",
+    "DNB",
+    "Diploma in Clinical Medicine"
+)
+private val experienceOptions = listOf(
+    "Less than 1 year",
+    "1-2 years",
+    "3-5 years",
+    "6-10 years",
+    "11-15 years",
+    "16-20 years",
+    "20+ years"
+)
 
 @Composable
 fun SplashScreen() {
@@ -65,12 +101,22 @@ fun SplashScreen() {
 }
 
 @Composable
-fun LoginScreen(onRegister: () -> Unit, onForgot: () -> Unit, onSignedIn: (String) -> Unit, vm: AuthViewModel = hiltViewModel()) {
+fun SessionIssueScreen(message: String, onLogout: () -> Unit) {
+    AuthFrame("Profile unavailable") {
+        Text(
+            message.ifBlank { "We could not load your profile. Check your connection and try again." },
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        LoadingButton("Back to sign in", false, onLogout)
+    }
+}
+
+@Composable
+fun LoginScreen(onRegister: () -> Unit, onForgot: () -> Unit, vm: AuthViewModel = hiltViewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     val state by vm.state.collectAsState()
-    LaunchedEffect(state.data?.uid) { state.data?.let { onSignedIn(it.role) } }
     AuthFrame("Welcome back") {
         OutlinedTextField(
             email,
@@ -89,13 +135,12 @@ fun LoginScreen(onRegister: () -> Unit, onForgot: () -> Unit, onSignedIn: (Strin
 }
 
 @Composable
-fun RegisterScreen(onLogin: () -> Unit, onSignedIn: (String) -> Unit, vm: AuthViewModel = hiltViewModel()) {
+fun RegisterScreen(onLogin: () -> Unit, vm: AuthViewModel = hiltViewModel()) {
     var form by remember { mutableStateOf(AuthForm()) }
     var showPassword by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
     val state by vm.state.collectAsState()
     val errors = if (submitted) Validators.registrationErrors(form) else Validators.RegistrationErrors()
-    LaunchedEffect(state.data?.uid) { state.data?.let { onSignedIn(it.role) } }
     AuthFrame("Patient Registration") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             FilterChip(form.role == UserRole.PATIENT, onClick = { form = form.copy(role = UserRole.PATIENT) }, label = { Text("Patient") })
@@ -124,14 +169,14 @@ fun RegisterScreen(onLogin: () -> Unit, onSignedIn: (String) -> Unit, vm: AuthVi
             ValidatedField("Address", form.address, { form = form.copy(address = it) }, errors.address, singleLine = false)
         } else {
             AppDropdown("Department", form.department, departmentOptions, { form = form.copy(department = it) })
-            ValidatedField("Specialization", form.specialization, { form = form.copy(specialization = it) }, errors.specialization)
-            ValidatedField("Qualification", form.qualification, { form = form.copy(qualification = it) }, errors.qualification)
-            ValidatedField("Experience", form.experience, { form = form.copy(experience = it) }, errors.experience)
+            AppDropdown("Specialization", form.specialization, specializationOptions, { form = form.copy(specialization = it) }, error = errors.specialization)
+            AppDropdown("Degree / qualification", form.qualification, qualificationOptions, { form = form.copy(qualification = it) }, error = errors.qualification)
+            AppDropdown("Experience", form.experience, experienceOptions, { form = form.copy(experience = it) }, error = errors.experience)
             ValidatedField("Hospital/Clinic", form.hospitalClinic, { form = form.copy(hospitalClinic = it) }, errors.hospitalClinic)
         }
         PasswordField(form.password, { form = form.copy(password = it) }, showPassword, { showPassword = !showPassword }, errors.password)
         LoadingButton(
-            "Register",
+            "Create account",
             state.loading,
             {
                 submitted = true
@@ -163,7 +208,8 @@ private fun AuthFrame(title: String, content: @Composable ColumnScope.() -> Unit
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -226,10 +272,17 @@ private fun PasswordField(
 @Composable
 private fun Message(message: String, success: Boolean) {
     if (message.isNotBlank()) {
-        Text(
-            message,
-            color = if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.small,
+            color = if (success) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+        ) {
+            Text(
+                message,
+                modifier = Modifier.padding(12.dp),
+                color = if (success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }

@@ -8,6 +8,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import com.medical.management.data.model.Appointment
 import com.medical.management.data.model.AppointmentStatus
+import com.medical.management.data.model.AuthSession
 import com.medical.management.data.model.AuthForm
 import com.medical.management.data.model.Bill
 import com.medical.management.data.model.DashboardStats
@@ -15,9 +16,11 @@ import com.medical.management.data.model.MedicalNotification
 import com.medical.management.data.model.MedicalUser
 import com.medical.management.domain.repository.MedicalRepository
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,26 +32,44 @@ class FirebaseMedicalRepository @Inject constructor(
     private val storage: FirebaseStorage,
     private val messaging: FirebaseMessaging
 ) : MedicalRepository {
-    override val currentUser: Flow<MedicalUser?> = callbackFlow {
+    override val authSession: Flow<AuthSession> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-            val uid = firebaseAuth.currentUser?.uid
-            if (uid == null) {
-                trySend(null)
-            } else {
-                firestore.collection(USERS).document(uid).get()
-                    .addOnSuccessListener { trySend(it.toObject(MedicalUser::class.java)) }
-                    .addOnFailureListener { trySend(null) }
+            val firebaseUser = firebaseAuth.currentUser
+            if (firebaseUser == null) {
+                trySend(AuthSession(loading = false, authenticated = false))
+                return@AuthStateListener
+            }
+
+            trySend(AuthSession(loading = true, authenticated = true))
+            launch {
+                val profile = loadUserProfile(firebaseUser.uid)
+                if (profile != null) {
+                    trySend(AuthSession(loading = false, authenticated = true, user = profile))
+                } else {
+                    trySend(
+                        AuthSession(
+                            loading = false,
+                            authenticated = true,
+                            message = "We signed you in, but could not load your profile. Check your connection and try again."
+                        )
+                    )
+                }
             }
         }
         auth.addAuthStateListener(listener)
         awaitClose { auth.removeAuthStateListener(listener) }
     }
 
+    override val currentUser: Flow<MedicalUser?> = authSession.map { it.user }
+
     override suspend fun login(email: String, password: String): Result<MedicalUser> = runCatching {
         val user = auth.signInWithEmailAndPassword(email.trim(), password).await().user
             ?: error("Unable to sign in")
-        firestore.collection(USERS).document(user.uid).get().await()
-            .toObject(MedicalUser::class.java) ?: error("Profile not found")
+        loadUserProfile(user.uid) ?: MedicalUser(
+            uid = user.uid,
+            email = user.email.orEmpty(),
+            name = user.displayName.orEmpty()
+        )
     }
 
     override suspend fun register(form: AuthForm): Result<MedicalUser> = runCatching {
@@ -212,6 +233,16 @@ class FirebaseMedicalRepository @Inject constructor(
     private fun <T> Flow<List<T>>.mapLocal(transform: (List<T>) -> List<T>): Flow<List<T>> =
         map { transform(it) }
 
+    private suspend fun loadUserProfile(uid: String): MedicalUser? {
+        repeat(PROFILE_LOAD_ATTEMPTS) { attempt ->
+            val snapshot = runCatching { firestore.collection(USERS).document(uid).get().await() }.getOrNull()
+            val user = snapshot?.toObject(MedicalUser::class.java)
+            if (user != null) return user
+            if (attempt < PROFILE_LOAD_ATTEMPTS - 1) delay(PROFILE_LOAD_RETRY_MS)
+        }
+        return null
+    }
+
     private suspend fun notify(userId: String, title: String, message: String) {
         val id = firestore.collection(NOTIFICATIONS).document().id
         firestore.collection(NOTIFICATIONS).document(id).set(
@@ -225,5 +256,7 @@ class FirebaseMedicalRepository @Inject constructor(
         const val TREATMENTS = "treatments"
         const val BILLS = "bills"
         const val NOTIFICATIONS = "notifications"
+        const val PROFILE_LOAD_ATTEMPTS = 4
+        const val PROFILE_LOAD_RETRY_MS = 350L
     }
 }

@@ -21,10 +21,11 @@ Medical Management System is a Kotlin Android app for patient and doctor workflo
 1. Create a Firebase project in the Firebase console.
 2. Add an Android app with package name `com.medical.management`.
 3. Download `google-services.json`.
-4. Place it at `app/google-services.json`.
-5. Rebuild the project. The Google Services Gradle plugin is applied automatically when that file exists.
+4. Place it at `app/google-services.json` or replace the existing file with your own Firebase project file.
+5. Enable Email/Password sign-in in Firebase Authentication.
+6. Rebuild the project. The Google Services Gradle plugin is applied automatically when that file exists.
 
-Firebase credentials are intentionally not committed or hardcoded.
+`app/google-services.json` is included for this app because Android Firebase config is required at build time and does not contain server-admin credentials. If you fork this app for a public or production project, replace it with your own Firebase config before building.
 
 ## SHA-1 Generation
 
@@ -70,6 +71,12 @@ Run a debug build:
 
 ```bash
 ./build.sh
+```
+
+You can also use the Gradle wrapper directly:
+
+```bash
+./gradlew :app:assembleDebug
 ```
 
 ## Debug Build
@@ -128,6 +135,25 @@ app/src/main/java/com/medical/management/
   ui/theme
   utils
 ```
+
+## GitHub Upload Notes
+
+Commit these files:
+
+- Source code under `app/src/`
+- Gradle files: `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat`, and `gradle/wrapper/`
+- Firebase rules: `firestore.rules`
+- Project Firebase Android config: `app/google-services.json`
+- Documentation and helper scripts: `README.md`, `build.sh`
+
+Do not commit these files:
+
+- Build output: `build/`, `app/build/`, APK/AAB artifacts
+- Local caches: `.gradle/`, `.kotlin/`
+- Machine-local Android config: `local.properties`
+- IDE metadata: `.idea/`, `.vscode/`, `*.iml`
+- Signing material: `*.jks`, `*.keystore`, `keystore.properties`, `signing.properties`
+- Environment files, logs, and temporary files
 
 ## Troubleshooting
 
